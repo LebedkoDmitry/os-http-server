@@ -1,7 +1,7 @@
 all: compile
 
-compile:
+compile: clean
 	gcc -o bin/httpserver src/httpserver.c
 
 clean:
-	rm httpserver
+	rm bin/httpserver

@@ -1,1 +1,1 @@
-Test file in folder
+Test file in folder. This is not html file but simple text file.

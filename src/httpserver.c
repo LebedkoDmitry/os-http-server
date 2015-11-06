@@ -4,6 +4,8 @@
 #include <netinet/in.h>
 #include <string.h>
 
+#define BUF_SIZE 100
+
 void headers(int client, int size, int httpcode) {
 	char buf[1024];
 	char strsize[20];
@@ -20,16 +22,13 @@ void headers(int client, int size, int httpcode) {
 	send(client, buf, strlen(buf), 0);
 	strcpy(buf, "Connection: keep-alive\r\n");
 	send(client, buf, strlen(buf), 0);
-	strcpy(buf, "Content-length: ");
+        sprintf(buf, "Content-length: %s\r\n", strsize);
 	send(client, buf, strlen(buf), 0);
 	strcpy(buf, strsize);
-	send(client, buf, strlen(buf), 0);
-	strcpy(buf, "\r\n");
-	send(client, buf, strlen(buf), 0);
-	strcpy(buf, "simple-server");
+	strcpy(buf, "Server: simple-server\r\n");
 	send(client, buf, strlen(buf), 0);
 	// if image is requested then content type is different
-	sprintf(buf, "Content-Type: text/html\r\n");
+	sprintf(buf, "Content-Type: text/html; charset=UTF-8\r\n");
 	send(client, buf, strlen(buf), 0);
 	strcpy(buf, "\r\n");
 	send(client, buf, strlen(buf), 0);
@@ -57,6 +56,7 @@ int main() {
 	struct sockaddr_in saddr;
 	struct sockaddr_in caddr;
 	char *line = NULL;
+        char *buf = NULL;
 	size_t len = 0;
 	char *filepath = NULL;
 	size_t filepath_len = 0;
@@ -121,7 +121,7 @@ int main() {
 		}
 		printf("open %s \n", filepath);
 		// "b" binary flag - for non text files
-		file = fopen(filepath, "r");
+		file = fopen(filepath, "rb");
 		if (file == NULL) {
 			printf("404 File Not Found \n");
 			headers(cd, 0, 404);
@@ -131,13 +131,13 @@ int main() {
 			filesize = ftell(file);
 			fseek(file, 0L, SEEK_SET);
 			headers(cd, filesize, 200);
-			while (getline(&line, &len, file) != -1) {
-				// send - write with additional parameters
-				res = send(cd, line, len, 0);
-				if (res == -1) {
-					printf("send error \n");
-				}
-			}
+                        while (!feof(file)) {
+                          len = fread(line, 1, 1024, file);
+                          res = send(cd, line, len, 0);
+                          if (res == -1) {
+                            printf("send error\n");
+                          }
+                        }
 		}
 		close(cd);
 	}
